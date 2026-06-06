@@ -20,7 +20,6 @@ import AdminFAQS from "./pages/AdminFAQS";
 import AdminLayout from "./components/layout/AdminLayout";
 import ChatBot from "./components/ai/ChatBot";
 import Profile from "./pages/Profile";
-import Trending from "./pages/Trending";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,7 +45,6 @@ export default function App() {
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/faq" element={<FAQHub />} />
-                  <Route path="/trending" element={<Trending />} />
                   <Route
                     path="/raise-query"
                     element={

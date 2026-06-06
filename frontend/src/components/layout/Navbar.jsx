@@ -48,7 +48,6 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/faq" icon={<BookOpen className="w-4 h-4" />} label="FAQs" />
-            <NavLink to="/trending" icon={<TrendingUp className="w-4 h-4" />} label="Trending" />
             <NavLink to="/raise-query" icon={<PlusCircle className="w-4 h-4" />} label="Ask" />
             <NavLink to="/community-qa" icon={<MessageSquare className="w-4 h-4" />} label="Community" />
             {isAdmin && <NavLink to="/admin" icon={<Shield className="w-4 h-4" />} label="Admin" />}
@@ -121,7 +120,6 @@ export default function Navbar() {
           >
             <div className="px-4 py-3 space-y-1">
               <MobileNavLink to="/faq" icon={<BookOpen className="w-4 h-4" />} label="FAQs" onClick={() => setOpen(false)} />
-              <MobileNavLink to="/trending" icon={<TrendingUp className="w-4 h-4" />} label="Trending" onClick={() => setOpen(false)} />
               <MobileNavLink to="/raise-query" icon={<PlusCircle className="w-4 h-4" />} label="Ask Question" onClick={() => setOpen(false)} />
               <MobileNavLink to="/community-qa" icon={<MessageSquare className="w-4 h-4" />} label="Community" onClick={() => setOpen(false)} />
               {isAdmin && <MobileNavLink to="/admin" icon={<Shield className="w-4 h-4" />} label="Admin" onClick={() => setOpen(false)} />}
