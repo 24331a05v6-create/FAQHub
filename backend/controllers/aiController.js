@@ -23,7 +23,7 @@ const searchFAQs = async (query) => {
     const words = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w));
     if (words.length === 0) return [];
 
-    const allFAQs = await FAQ.find().select("question answer category tags").lean();
+    const allFAQs = await FAQ.find().select("question answer category tags faqNumber").lean();
     const scored = allFAQs.map((faq) => {
       const text = `${faq.question} ${faq.answer} ${faq.tags?.join(" ") || ""}`.toLowerCase();
       const qLower = faq.question.toLowerCase();
@@ -42,6 +42,14 @@ const searchFAQs = async (query) => {
   } catch {
     return [];
   }
+};
+
+const lookupFAQByNumber = async (query) => {
+  const match = query.match(/#(\d+)/);
+  if (!match) return null;
+  const num = parseInt(match[1], 10);
+  const faq = await FAQ.findOne({ faqNumber: num }).select("question answer category tags faqNumber").lean();
+  return faq || null;
 };
 
 const aiChat = async (req, res, next) => {
@@ -63,6 +71,14 @@ const aiChat = async (req, res, next) => {
       };
       const reply = greetings[lang] || greetings.en;
       return res.json({ reply, language: lang, faqMatch: false });
+    }
+
+    // Check for FAQ number lookup (e.g., "#5 explain", "what is #12")
+    const numberedFAQ = await lookupFAQByNumber(trimmed);
+    if (numberedFAQ) {
+      let reply = `**FAQ #${numberedFAQ.faqNumber}: ${numberedFAQ.question}**\n\n${numberedFAQ.answer}`;
+      reply += `\n\n_(Category: ${numberedFAQ.category})_`;
+      return res.json({ reply, language: lang, faqMatch: true });
     }
 
     const matchedFAQs = await searchFAQs(trimmed);
@@ -134,7 +150,7 @@ ${PORTAL_INFO}`;
 
       // Show FAQ if: most query words appear in the question, OR score is high enough
       if (questionCoverage >= 0.5 || best.score >= 6) {
-        let reply = `**${best.question}**\n\n${best.answer}`;
+        let reply = `**FAQ #${best.faqNumber || "—"}: ${best.question}**\n\n${best.answer}`;
         reply += `\n\n_(Category: ${best.category})_`;
         return res.json({ reply, language: lang, faqMatch: true });
       }
@@ -163,7 +179,7 @@ const suggestFAQs = async (req, res, next) => {
     if (!query) return res.status(400).json({ message: "Query is required" });
     const words = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2 && !STOP_WORDS.has(w));
     if (words.length === 0) return res.json([]);
-    const allFAQs = await FAQ.find().select("question answer category tags").lean();
+    const allFAQs = await FAQ.find().select("question answer category tags faqNumber").lean();
     const scored = allFAQs.map((faq) => {
       const text = `${faq.question} ${faq.answer} ${faq.tags?.join(" ") || ""}`.toLowerCase();
       const qLower = faq.question.toLowerCase();
