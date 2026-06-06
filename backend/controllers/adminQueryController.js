@@ -50,9 +50,9 @@ const resolveAdminQuery = async (req, res, next) => {
 
     await Notification.create({
       user: query.author,
-      message: `Your admin query "${query.title}" has been resolved.`,
+      message: `Your admin query "${query.title}" has been resolved.\n\nAdmin Answer: ${answer}`,
       type: "success",
-      link: "/raise-query",
+      link: "/profile",
     });
 
     res.json({ message: "Query resolved successfully" });

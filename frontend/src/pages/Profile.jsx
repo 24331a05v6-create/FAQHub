@@ -21,12 +21,14 @@ const API = {
   getAnswers: () => authFetch("/api/users/me/answers"),
   getNotifications: () => authFetch("/api/users/me/notifications"),
   markRead: (ids) => authFetch("/api/users/me/notifications/read", { method: "PATCH", body: JSON.stringify({ ids }) }),
+  getAdminQueries: () => authFetch("/api/admin-queries/my"),
 };
 
 const TABS = [
   { key: "questions", label: "Raised", icon: HelpCircle },
   { key: "resolved", label: "Resolved", icon: CheckCircle },
   { key: "answers", label: "Answers", icon: MessageSquare },
+  { key: "admin-queries", label: "Admin Queries", icon: Bell },
   { key: "notifications", label: "Alerts", icon: Bell },
 ];
 
@@ -42,6 +44,7 @@ export default function Profile() {
   const { data: questionsData } = useQuery({ queryKey: ["my-questions", tab === "resolved" ? "resolved" : tab === "questions" ? "" : null], queryFn: () => API.getQuestions(tab === "resolved" ? "resolved" : ""), enabled: !!user && (tab === "questions" || tab === "resolved") });
   const { data: answersData } = useQuery({ queryKey: ["my-answers"], queryFn: API.getAnswers, enabled: !!user && tab === "answers" });
   const { data: notifData, refetch: refetchNotifs } = useQuery({ queryKey: ["my-notifications"], queryFn: API.getNotifications, enabled: !!user && tab === "notifications" });
+  const { data: adminQueriesData } = useQuery({ queryKey: ["my-admin-queries"], queryFn: API.getAdminQueries, enabled: !!user && tab === "admin-queries" });
 
   const markReadMutation = useMutation({ mutationFn: (ids) => API.markRead(ids), onSuccess: () => { refetchNotifs(); queryClient.invalidateQueries({ queryKey: ["user-profile"] }); } });
 
@@ -51,6 +54,7 @@ export default function Profile() {
   const answers = answersData?.answers || [];
   const notifications = notifData?.notifications || [];
   const unread = notifData?.unread || 0;
+  const adminQueries = adminQueriesData || [];
 
   if (!user) return null;
 
@@ -99,6 +103,7 @@ export default function Profile() {
         {tab === "questions" && <QuestionsList questions={questions} emptyMsg="You haven't raised any queries yet." expanded={expanded} setExpanded={setExpanded} />}
         {tab === "resolved" && <QuestionsList questions={questions} emptyMsg="No resolved queries yet." resolved expanded={expanded} setExpanded={setExpanded} />}
         {tab === "answers" && <AnswersList answers={answers} expanded={expanded} setExpanded={setExpanded} />}
+        {tab === "admin-queries" && <AdminQueriesList queries={adminQueries} expanded={expanded} setExpanded={setExpanded} />}
         {tab === "notifications" && <NotificationsList notifications={notifications} unread={unread} onMarkRead={(ids) => markReadMutation.mutate(ids)} onMarkAllRead={() => markReadMutation.mutate([])} />}
       </div>
     </div>
@@ -154,6 +159,51 @@ function AnswersList({ answers }) {
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">On: <span className="font-medium text-gray-700 dark:text-gray-300">{a.question?.title || "Unknown question"}</span></p>
           <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{a.content}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function AdminQueriesList({ queries, expanded, setExpanded }) {
+  if (!queries.length) {
+    return <div className="text-center py-16 card-glass"><Bell className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" /><p className="text-sm text-gray-500 dark:text-gray-400">You haven't asked any admin queries yet.</p></div>;
+  }
+  return (
+    <div className="space-y-3">
+      {queries.map((q) => (
+        <motion.div key={q._id} layout className="card-glass overflow-hidden">
+          <button onClick={() => setExpanded(expanded === q._id ? null : q._id)} className="w-full p-4 text-left flex items-start gap-3 hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-all">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`px-2 py-0.5 rounded-lg text-[10px] font-medium ${q.status === "resolved" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"}`}>{q.status}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-medium">Admin Query</span>
+              </div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">{q.title}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{q.description}</p>
+              <p className="text-[10px] text-gray-400 mt-1.5">{new Date(q.createdAt).toLocaleDateString()}</p>
+            </div>
+            {expanded === q._id ? <ChevronUp className="w-4 h-4 text-gray-400 shrink-0 mt-1" /> : <ChevronDown className="w-4 h-4 text-gray-400 shrink-0 mt-1" />}
+          </button>
+          <AnimatePresence>
+            {expanded === q._id && (
+              <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden border-t border-gray-100 dark:border-gray-700/50">
+                <div className="p-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap mb-3">{q.description}</p>
+                  {q.answer && (
+                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <span className="text-xs font-semibold text-green-700 dark:text-green-400">Admin Response</span>
+                        {q.resolvedAt && <span className="text-[10px] text-green-500">{new Date(q.resolvedAt).toLocaleDateString()}</span>}
+                      </div>
+                      <p className="text-sm text-green-800 dark:text-green-300 whitespace-pre-wrap">{q.answer}</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       ))}
     </div>
