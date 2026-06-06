@@ -73,3 +73,10 @@ export const credentialAPI = {
   issue: (data) => API.post("/credentials/issue", data),
   revoke: (id) => API.patch(`/credentials/${id}/revoke`),
 };
+
+export const adminQueryAPI = {
+  create: (data) => API.post("/admin-queries", data),
+  getMy: () => API.get("/admin-queries/my"),
+  getPending: () => API.get("/admin-queries/pending"),
+  resolve: (id, answer) => API.patch(`/admin-queries/${id}/resolve`, { answer }),
+};

@@ -19,6 +19,7 @@ const credentialRoutes = require("./routes/credentialRoutes");
 const userRoutes = require("./routes/userRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const adminQueryRoutes = require("./routes/adminQueryRoutes");
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use("/api/credentials", credentialRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/admin-queries", adminQueryRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });

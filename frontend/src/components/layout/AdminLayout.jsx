@@ -1,10 +1,11 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Shield, BarChart3, CheckCircle, Copy, Key, BookOpen, Sparkles } from "lucide-react";
+import { Shield, BarChart3, CheckCircle, Copy, Key, BookOpen, Sparkles, MessageSquare } from "lucide-react";
 
 const adminTabs = [
   { label: "Overview", path: "/admin", icon: BarChart3 },
   { label: "Moderation", path: "/admin/moderation", icon: CheckCircle },
   { label: "FAQs", path: "/admin/faqs", icon: BookOpen },
+  { label: "Admin Queries", path: "/admin/admin-queries", icon: MessageSquare },
   { label: "Duplicates", path: "/admin/duplicates", icon: Copy },
   { label: "Credentials", path: "/admin/credentials", icon: Key },
 ];

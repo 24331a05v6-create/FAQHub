@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Send, Tag, HelpCircle, ArrowLeft, Search, Lightbulb, ExternalLink, CheckCircle, Loader2, FileText, X, Square, CheckSquare,
+  Send, Tag, HelpCircle, ArrowLeft, Search, Lightbulb, ExternalLink, CheckCircle, Loader2, FileText, X, Square, CheckSquare, Shield,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { questionAPI, faqAPI } from "../api";
+import { questionAPI, faqAPI, adminQueryAPI } from "../api";
 import { useAuth } from "../context/AuthContext";
 
 export default function RaiseQuery() {
@@ -24,6 +24,7 @@ export default function RaiseQuery() {
   const [bypassed, setBypassed] = useState(false);
   const [searchTitle, setSearchTitle] = useState("");
   const [checkFAQs, setCheckFAQs] = useState(false);
+  const [askAdmin, setAskAdmin] = useState(false);
   const resultsRef = useRef(null);
 
   const { data: categoriesData } = useQuery({
@@ -65,19 +66,26 @@ export default function RaiseQuery() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return toast.error("Please login to raise a query");
-    if (!form.title.trim() || !form.description.trim() || !form.category) {
+    if (!form.title.trim() || !form.description.trim()) {
       return toast.error("Please fill in all required fields");
     }
     setSubmitting(true);
     try {
-      await questionAPI.create({
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-      });
-      toast.success("Question submitted successfully!");
-      navigate("/community-qa");
+      if (askAdmin) {
+        await adminQueryAPI.create({ title: form.title, description: form.description });
+        toast.success("Question sent to admin! You'll be notified when resolved.");
+        navigate("/community-qa");
+      } else {
+        if (!form.category) return toast.error("Please select a category");
+        await questionAPI.create({
+          title: form.title,
+          description: form.description,
+          category: form.category,
+          tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        });
+        toast.success("Question submitted successfully!");
+        navigate("/community-qa");
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to submit question");
     } finally {
@@ -108,6 +116,19 @@ export default function RaiseQuery() {
           </div>
 
           <form onSubmit={handleSubmit} className={`card-glass p-8 space-y-6 transition-all ${showBlock ? "opacity-40 pointer-events-none" : ""}`}>
+            {/* Ask Admin Toggle */}
+            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800">
+              <Shield className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Question only admin can solve?</p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">Personal issues, account problems, special requests</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={askAdmin} onChange={() => setAskAdmin(!askAdmin)} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-500"></div>
+              </label>
+            </div>
+
             {/* Title + Checkbox */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -142,39 +163,41 @@ export default function RaiseQuery() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
+            {!askAdmin && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={form.category}
+                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                  Tags <span className="text-gray-400">(optional)</span>
-                </label>
-                <div className="relative">
-                  <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={form.tags}
-                    onChange={(e) => setForm({ ...form, tags: e.target.value })}
-                    placeholder="password, reset, account"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
-                  />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Tags <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={form.tags}
+                      onChange={(e) => setForm({ ...form, tags: e.target.value })}
+                      placeholder="password, reset, account"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <button
               type="submit"

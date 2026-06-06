@@ -17,6 +17,7 @@ import ModerationDashboard from "./pages/ModerationDashboard";
 import DuplicateDetection from "./pages/DuplicateDetection";
 import CredentialManagement from "./pages/CredentialManagement";
 import AdminFAQS from "./pages/AdminFAQS";
+import AdminQueries from "./pages/AdminQueries";
 import AdminLayout from "./components/layout/AdminLayout";
 import ChatBot from "./components/ai/ChatBot";
 import Profile from "./pages/Profile";
@@ -73,6 +74,7 @@ export default function App() {
                     <Route index element={<AdminDashboard />} />
                     <Route path="moderation" element={<ModerationDashboard />} />
                     <Route path="faqs" element={<AdminFAQS />} />
+                    <Route path="admin-queries" element={<AdminQueries />} />
                     <Route path="duplicates" element={<DuplicateDetection />} />
                     <Route path="credentials" element={<CredentialManagement />} />
                   </Route>
