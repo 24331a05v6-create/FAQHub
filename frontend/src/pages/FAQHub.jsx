@@ -456,5 +456,3 @@ function TreeLeaf({ faq, expanded, onToggle, onBookmark, onShare, user, isLast, 
   );
 }
 
-}
-
