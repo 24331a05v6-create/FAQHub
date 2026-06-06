@@ -21,6 +21,8 @@ import {
   Pin,
   BarChart3,
   Network,
+  TrendingUp,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { faqAPI } from "../api";
@@ -66,6 +68,11 @@ export default function FAQHub() {
   const { data: categoriesData } = useQuery({
     queryKey: ["faq-categories"],
     queryFn: faqAPI.getCategories,
+  });
+
+  const { data: trendingData, isLoading: trendingLoading } = useQuery({
+    queryKey: ["faqs-trending"],
+    queryFn: faqAPI.getTrending,
   });
 
   const allFAQs = searchData?.faqs || faqData?.faqs || [];
@@ -161,6 +168,9 @@ export default function FAQHub() {
                 <button onClick={() => switchView("mindmap")} className={`p-1.5 rounded-md transition-all ${viewMode === "mindmap" ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`} title="Mind map view">
                   <Network className="w-4 h-4" />
                 </button>
+                <button onClick={() => switchView("trending")} className={`p-1.5 rounded-md transition-all ${viewMode === "trending" ? "bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"}`} title="Trending FAQs">
+                  <TrendingUp className="w-4 h-4" />
+                </button>
               </div>
               <button onClick={handleVoiceSearch} className={`p-2 rounded-lg transition-colors ${listening ? "bg-red-100 text-red-500 animate-pulse" : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400"}`}>
                 {listening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -201,7 +211,65 @@ export default function FAQHub() {
             <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Try a different search term</p>
           </div>
         ) : (
-          viewMode === "mindmap" ? (
+          viewMode === "trending" ? (
+            <div className="px-4 pb-12">
+              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Trending FAQs</h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Most viewed and bookmarked questions</p>
+                </div>
+              </div>
+              {trendingLoading ? (
+                <FAQSkeleton />
+              ) : !trendingData?.mostViewed?.length ? (
+                <div className="text-center py-16">
+                  <BarChart3 className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-600 dark:text-gray-400">No trending FAQs yet</h3>
+                  <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">FAQs will appear here as they get views and bookmarks</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {trendingData.mostViewed.map((faq, idx) => (
+                    <motion.div
+                      key={faq._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="card-glass p-4 hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => { setViewMode("tree"); setTimeout(() => toggleFAQ(faq._id), 100); }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${
+                          idx === 0 ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400" :
+                          idx === 1 ? "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400" :
+                          idx === 2 ? "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400" :
+                          "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500"
+                        }`}>
+                          {idx + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-mono text-gray-400">#{faq.faqNumber || "—"}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400">{faq.category}</span>
+                          </div>
+                          <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">{faq.question}</h3>
+                          <div className="flex items-center gap-4 mt-2 text-[11px] text-gray-400">
+                            <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{faq.views || 0} views</span>
+                            <span className="flex items-center gap-1"><Bookmark className="w-3 h-3" />{faq.bookmarks || 0} bookmarks</span>
+                            {faq.trendingScore > 0 && <span className="flex items-center gap-1 text-orange-500"><BarChart3 className="w-3 h-3" />{faq.trendingScore}</span>}
+                          </div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-300 shrink-0 mt-2" />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : viewMode === "mindmap" ? (
             <div className="px-4 pb-12">
               <MindMap faqs={allFAQs} categories={categories} />
             </div>
