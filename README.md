@@ -5,7 +5,7 @@ A premium, full-stack MERN application for community-driven Q&A with AI chatbot 
 ## Features
 
 ### Core
-- **4 FAQ Views** — Tree, Gallery, Explorer, and Mind Map visualizations
+- **2 FAQ Views** — Tree and Mind Map visualizations
 - **AI Chatbot** — Multilingual support (10 languages), image upload, FAQ-first smart search
 - **OTP Registration** — Email-based verification with Gmail SMTP
 - **Community Q&A** — Ask questions, answer peers, upvote best responses
